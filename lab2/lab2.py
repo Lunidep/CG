@@ -1,105 +1,108 @@
-import matplotlib.pyplot as plt
+''''
+Popov Ilya
+M80-306Б-20
+
+16 – гранная прямая правильная пирамида
+
+Тема: Каркасная визуализация выпуклого многогранника. Удаление невидимых линий.
+Задание: Разработать формат представления многогранника и процедуру его каркасной отрисовки в ортографической и
+изометрической проекциях. Обеспечить удаление невидимых линий и возможность пространственных поворотов и
+масштабирования многогранника. Обеспечить автоматическое центрирование и изменение размеров изображения при
+изменении размеров окна. 
+'''
+
+import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.text import Text
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.widgets import Button
 
 fig = plt.figure()
+fig.subplots_adjust(bottom=0.3)
 ax = fig.add_subplot(111, projection='3d')
+ax.set_title(r"16 – гранная прямая правильная пирамида")
 
-#низ
-x = [0, 8, 8, 0]
-y = [0, 0, 8, 8]
-z = [0, 0, 0, 0]
-sides = [list(zip(x, y, z))]
+N = 15  # количество граней
+segm = np.pi * 2 / N
+rotation = 0
+radius = 1
+#  вершины пирамиды
+v = np.array([(np.sin(segm * i + rotation) * radius, np.cos(segm * i + rotation) * radius, 0)
+              for i in range(N)])
 
-#верх
-x = [0, 8, 8, 0]
-y = [0, 0, 8, 8]
-z = [8, 8, 8, 8]
-sides.append(list(zip(x, y, z)))
+top = np.array([0, 0, 0.7])
+ax.scatter3D(v[:, 0], v[:, 1], v[:, 2])
+ax.set_zlim(0, 1)
+
+#  грани пирамиды
+sides = []
+for i in range(1, N):
+    sides.append([v[i - 1], v[i], top])
+sides.append([v[-1], v[0], top])
+
+# основание пирамиды
+sides.append(v)
+
+ax.add_collection3d(Poly3DCollection(sides, facecolors='blue', linewidths=1, edgecolors='black', alpha=0.5))
 
 
-#перед
-x = [0, 0, 0, 0]
-y = [0, 8, 8, 0]
-z = [0, 0, 8, 8]
-sides.append(list(zip(x, y, z)))
+#-------------------------
 
-
-#зад
-x = [8, 8, 8, 8]
-y = [0, 8, 8, 0]
-z = [0, 0, 8, 8]
-sides.append(list(zip(x, y, z)))
-
-#лево
-x = [0, 8, 8, 0]
-y = [8, 8, 8, 8]
-z = [0, 0, 8, 8]
-sides.append(list(zip(x, y, z)))
-
-#право
-x = [0, 8, 8, 0]
-y = [0, 0, 0, 0]
-z = [0, 0, 8, 8]
-sides.append(list(zip(x, y, z)))
-
-poly = Poly3DCollection(sides, alpha=0.5, edgecolors='black')
-
-ax.add_collection3d(poly)
-
-ax.set_xlim(0, 10)
-ax.set_ylim(0, 10)
-ax.set_zlim(0, 10)
-
-def button_callback_remove(event):
-    ax.add_collection3d(Poly3DCollection(sides, alpha=1, edgecolors='black'))
+def remove_func(event):
+    ax.add_collection3d(Poly3DCollection(sides, facecolors='blue', linewidths=1, edgecolors='black', alpha=1))
     plt.draw()
 
+remove_button_ax = fig.add_axes([0.4, 0.15, 0.5, 0.05])
+remove_button = Button(remove_button_ax, "Удалить невидимые линии")
+remove_button.on_clicked(remove_func)
 
-button_ax_remove = fig.add_axes([0.5, 0.05, 0.31, 0.06])
-button_remove = Button(button_ax_remove, "Remove invisible lines")
-button_remove.on_clicked(button_callback_remove)
 
-
-def button_callback_show(event):
-    ax.add_collection3d(Poly3DCollection(sides, alpha=0.5, edgecolors='black'))
+def show_func(event):
+    ax.add_collection3d(Poly3DCollection(sides, facecolors='blue', linewidths=1, edgecolors='black', alpha=0.5))
     plt.draw()
 
+show_button_ax = fig.add_axes([0.4, 0.25, 0.5, 0.05])
+show_button = Button(show_button_ax, "Показать невидимые линии")
+show_button.on_clicked(show_func)
 
-button_ax_show = fig.add_axes([0.5, 0.15, 0.31, 0.06])
-button_show = Button(button_ax_show, "Show invisible lines")
-button_show.on_clicked(button_callback_show)
+#-------------------------
 
-
-def button_callback_isometric(event):
-    ax.view_init(20, 145)
+fig.text(0.1, 0.34, "Проекции:")
+def isometric_func(event):
+    ax.view_init(elev=30)
     plt.draw()
 
+isometric_button_ax = fig.add_axes([0.1, 0.28, 0.23, 0.05])
+isometric_button = Button(isometric_button_ax, "Изометрия")
+isometric_button.on_clicked(isometric_func)
 
-button_ax_isometric = fig.add_axes([0.1, 0.05, 0.31, 0.06])
-button_isometric = Button(button_ax_isometric, "Isometric projection")
-button_isometric.on_clicked(button_callback_isometric)
 
-
-def button_callback_orthographic_top(event):
-    ax.view_init(90)
+def top_func(event):
+    ax.view_init(elev=90)
     plt.draw()
 
+top_button_ax = fig.add_axes([0.1, 0.16, 0.23, 0.05])
+top_button = Button(top_button_ax, "Вид сверху")
+top_button.on_clicked(top_func)
 
-button_ax_orthographic_top = fig.add_axes([0.1, 0.15, 0.31, 0.06])
-button_orthographic_top = Button(button_ax_orthographic_top, "Top orthographic projection")
-button_orthographic_top.on_clicked(button_callback_orthographic_top)
 
-
-def button_callback_orthographic_hip(event):
-    ax.view_init(0, 90)
+def front_func(event):
+    ax.view_init(elev=0)
     plt.draw()
 
+front_button_ax = fig.add_axes([0.1, 0.22, 0.23, 0.05])
+front_button = Button(front_button_ax, "Вид спереди")
+front_button.on_clicked(front_func)
 
-button_ax_orthographic_front = fig.add_axes([0.1, 0.85, 0.31, 0.06])
-button_orthographic_front = Button(button_ax_orthographic_front, "Side orthographic projection")
-button_orthographic_front.on_clicked(button_callback_orthographic_hip)
 
-ax.grid(None)
-ax.axis('off')
+def bottom_func(event):
+    ax.view_init(elev=-90)
+    plt.draw()
+
+bottom_button_ax = fig.add_axes([0.1, 0.1, 0.23, 0.05])
+bottom_button = Button(bottom_button_ax, "Вид снизу")
+bottom_button.on_clicked(bottom_func)
+
+ax.grid()
+ax.axis()
 plt.show()
